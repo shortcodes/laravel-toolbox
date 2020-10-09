@@ -6,7 +6,7 @@ use Illuminate\Support\Collection;
 
 trait SearchManagement
 {
-    public function search(): Collection
+    public function search()
     {
         $object = new $this->model;
 
@@ -17,7 +17,7 @@ trait SearchManagement
         return $this->eloquentSearch();
     }
 
-    private function eloquentSearch(): Collection
+    private function eloquentSearch()
     {
         $query = $this->model::query();
 
