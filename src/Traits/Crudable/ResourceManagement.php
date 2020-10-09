@@ -5,13 +5,14 @@ namespace Shortcodes\Toolbox\Traits\Crudable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 trait ResourceManagement
 {
     public function retrieveResource($object)
     {
-        if ($object instanceof Collection && $this->listResource) {
-            return $this->listResource::collect($object);
+        if (($object instanceof Collection || $object instanceof LengthAwarePaginator) && $this->listResource) {
+            return $this->listResource::collection($object);
         }
 
         if ($object instanceof Collection && $this->objectResource) {
