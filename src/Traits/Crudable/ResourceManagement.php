@@ -15,8 +15,8 @@ trait ResourceManagement
             return $this->listResource::collection($object);
         }
 
-        if ($object instanceof Collection && isset($this->objectResource)) {
-            return $this->objectResource::collect($object);
+        if (($object instanceof Collection || $object instanceof LengthAwarePaginator) && isset($this->objectResource)) {
+            return $this->objectResource::collection($object);
         }
 
         if ($object instanceof Model && isset($this->objectResource)) {
