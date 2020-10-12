@@ -31,7 +31,7 @@ trait SearchManagement
             $query->orderBy(request()->get('sort_by', 'id'), request()->get('sort_direction', 'desc'));
         }
 
-        if (!$this->pagination || request()->get('pagination') === 'false') {
+        if (!isset($this->pagination) || !$this->pagination || request()->get('pagination') === 'false') {
             return $query->get();
         }
 
