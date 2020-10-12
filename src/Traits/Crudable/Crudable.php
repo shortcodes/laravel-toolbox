@@ -27,7 +27,7 @@ trait Crudable
     {
         $this->applyRequest();
 
-        DB::transaction(function () {
+        return DB::transaction(function () {
             return $this->retrieveResource(
                 $this->model::create(request()->all())
             );
@@ -49,7 +49,7 @@ trait Crudable
 
         $object = $this->model::findOrFail($objectId);
 
-        DB::transaction(function () use ($object) {
+        return DB::transaction(function () use ($object) {
             return $this->retrieveResource(
                 tap($object)->update(request()->all())
             );
