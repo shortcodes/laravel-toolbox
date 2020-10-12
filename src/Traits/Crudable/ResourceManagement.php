@@ -11,15 +11,15 @@ trait ResourceManagement
 {
     public function retrieveResource($object)
     {
-        if (($object instanceof Collection || $object instanceof LengthAwarePaginator) && $this->listResource) {
+        if (($object instanceof Collection || $object instanceof LengthAwarePaginator) && isset($this->listResource)) {
             return $this->listResource::collection($object);
         }
 
-        if ($object instanceof Collection && $this->objectResource) {
+        if ($object instanceof Collection && isset($this->objectResource)) {
             return $this->objectResource::collect($object);
         }
 
-        if ($object instanceof Model && $this->objectResource) {
+        if ($object instanceof Model && isset($this->objectResource)) {
             return new $this->objectResource($object);
         }
 
