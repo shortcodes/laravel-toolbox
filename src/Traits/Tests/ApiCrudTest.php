@@ -15,11 +15,13 @@ abstract class ApiCrudTest extends TestCase
     {
         parent::setUp();
 
+
         $this->actingAs(User::factory()->make())->withHeaders(['X-App-Token' => env('AUTH_KEY')]);
     }
 
     public function test_index_object()
     {
+        dd($this->getName());
         $this->checkTestToRun('index');
 
         $this->json('GET', $this->getRoute('index'),
@@ -84,7 +86,7 @@ abstract class ApiCrudTest extends TestCase
             return $factoryObject->create();
         }
 
-        return $factoryObject->make()->toArray();
+        return array_merge($factoryObject->make()->toArray(), method_exists($this, 'mutated'));
     }
 
     private function getRoute($postfix, $objectId = null)
