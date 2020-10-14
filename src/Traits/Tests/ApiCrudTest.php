@@ -1,6 +1,6 @@
 <?php
 
-namespace Shortcodes\Toolbox\Traits\Tests;
+namespace Tests\Blueprints;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -15,27 +15,24 @@ abstract class ApiCrudTest extends TestCase
     {
         parent::setUp();
 
-
         $this->actingAs(User::factory()->make())->withHeaders(['X-App-Token' => env('AUTH_KEY')]);
     }
 
     public function test_index_object()
     {
-        dd($this->getName());
-        $this->checkTestToRun('index');
+        $this->checkTestToRun();
 
-        $this->json('GET', $this->getRoute('index'),
-            $this->prepareData('indexQueryParams')
-        )->assertStatus(200);
+        $this->json('GET', $this->getRoute(), $this->prepareData('indexQueryParams'))
+            ->assertStatus(200);
     }
 
     public function test_show_object()
     {
-        $this->checkTestToRun('show');
+        $this->checkTestToRun();
 
         $object = $this->makeObject(true);
 
-        $response = $this->json('GET', $this->getRoute('show', $object->id));
+        $response = $this->json('GET', $this->getRoute($object->id));
 
         $response->assertStatus(200)->assertJson([
             'data' => [
@@ -46,9 +43,9 @@ abstract class ApiCrudTest extends TestCase
 
     public function test_store_object()
     {
-        $this->checkTestToRun('store');
+        $this->checkTestToRun();
 
-        $response = $this->json('POST', $this->getRoute('store'), $this->prepareData());
+        $response = $this->json('POST', $this->getRoute(), $this->prepareData());
 
         $response->assertStatus(201);
         $this->assertNotNull($response->getData()->data->id);
@@ -56,22 +53,22 @@ abstract class ApiCrudTest extends TestCase
 
     public function test_update_object()
     {
-        $this->checkTestToRun('update');
+        $this->checkTestToRun();
 
         $object = $this->makeObject(true);
 
-        $response = $this->json('PATCH', $this->getRoute('update', $object->id), $this->prepareData());
+        $response = $this->json('PATCH', $this->getRoute($object->id), $this->prepareData());
 
         $response->assertStatus(200);
     }
 
-    public function test_delete_object()
+    public function test_destroy_object()
     {
-        $this->checkTestToRun('destroy');
+        $this->checkTestToRun();
 
         $object = $this->makeObject(true);
 
-        $response = $this->json('DELETE', $this->getRoute('destroy', $object->id));
+        $response = $this->json('DELETE', $this->getRoute($object->id));
 
         $response->assertStatus(204);
 
@@ -86,12 +83,13 @@ abstract class ApiCrudTest extends TestCase
             return $factoryObject->create();
         }
 
-        return array_merge($factoryObject->make()->toArray(), method_exists($this, 'mutated'));
+        return array_merge($factoryObject->make()->toArray(), $this->customMutator());
     }
 
-    private function getRoute($postfix, $objectId = null)
+    private function getRoute($objectId = null)
     {
-        return route(Str::kebab(Str::plural(class_basename($this->model))) . '.' . $postfix,
+
+        return route(Str::kebab(Str::plural(class_basename($this->model))) . '.' . $this->getPrefix(),
             $objectId ? [Str::snake(class_basename($this->model)) => $objectId] : []
         );
     }
@@ -105,15 +103,32 @@ abstract class ApiCrudTest extends TestCase
         return [];
     }
 
-    private function checkTestToRun(string $keyword)
+    private function checkTestToRun()
     {
-        if (isset($this->testOnly) && !in_array($keyword, $this->testOnly)) {
+        if (isset($this->testOnly) && !in_array($this->getPrefix(), $this->testOnly)) {
             $this->markTestSkipped();
         }
 
-        if (isset($this->testExcept) && in_array($keyword, $this->testExcept)) {
+        if (isset($this->testExcept) && in_array($this->getPrefix(), $this->testExcept)) {
             $this->markTestSkipped();
         }
+    }
+
+    private function getPrefix()
+    {
+        return str_replace(['test_', '_object'], ['', ''], $this->getName());
+    }
+
+    private function customMutator()
+    {
+
+        $mutatorMethodName = $this->getPrefix() . 'CustomMutator';
+
+        if (in_array($this->getPrefix(), ['store', 'update']) && method_exists($this, $mutatorMethodName)) {
+            return $this->$mutatorMethodName();
+        }
+
+        return [];
     }
 
 }
