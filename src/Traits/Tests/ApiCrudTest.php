@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Blueprints;
+namespace Shortcodes\Toolbox\Traits\Tests;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -121,7 +121,6 @@ abstract class ApiCrudTest extends TestCase
 
     private function customMutator()
     {
-
         $mutatorMethodName = $this->getPrefix() . 'CustomMutator';
 
         if (in_array($this->getPrefix(), ['store', 'update']) && method_exists($this, $mutatorMethodName)) {
