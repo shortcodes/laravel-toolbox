@@ -2,95 +2,119 @@
 
 namespace Shortcodes\Toolbox\Traits\Tests;
 
-use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Routing\Route;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
-abstract class ApiCrudTest extends TestCase
+abstract class FormRequestTest extends TestCase
 {
-    use DatabaseTransactions;
+    protected $model;
+    private $request;
+    private $errors;
 
-    protected function setUp(): void
+    public function assertValidRequest()
     {
-        parent::setUp();
+        try {
+            $this->request->validateResolved();
 
-        $this->actingAs(User::factory()->make())->withHeaders(['X-App-Token' => env('AUTH_KEY')]);
-    }
-
-    public function test_index_object()
-    {
-        $this->json('GET', $this->getRoute('index'),
-            $this->prepareData('indexQueryParams')
-        )->assertStatus(200);
-    }
-
-    public function test_show_object()
-    {
-        $object = $this->makeObject(true);
-
-        $response = $this->json('GET', $this->getRoute('show', $object->id));
-
-        $response->assertStatus(200)->assertJson([
-            'data' => [
-                'id' => $object->id,
-            ],
-        ]);
-    }
-
-    public function test_store_object()
-    {
-        $response = $this->json('POST', $this->getRoute('store'), $this->prepareData());
-
-        $response->assertStatus(201);
-        $this->assertNotNull($response->getData()->data->id);
-    }
-
-    public function test_update_object()
-    {
-        $object = $this->makeObject(true);
-
-        $response = $this->json('PATCH', $this->getRoute('update', $object->id), $this->prepareData());
-
-        $response->assertStatus(200);
-    }
-
-    public function test_delete_object()
-    {
-        $object = $this->makeObject(true);
-
-        $response = $this->json('DELETE', $this->getRoute('destroy', $object->id));
-
-        $response->assertStatus(204);
-
-        $this->assertNull($this->model::find($object->id));
-    }
-
-    private function makeObject($persist = false)
-    {
-        $factoryObject = $this->model::factory();
-
-        if ($persist) {
-            return $factoryObject->create();
+            $this->assertTrue(true);
+        } catch (ValidationException $exception) {
+            $this->assertTrue(false);
         }
 
-        return $factoryObject->make()->toArray();
+        return $this;
     }
 
-    private function getRoute($postfix, $objectId = null)
+    public function assertInvalidRequest()
     {
-        return route(Str::kebab(Str::plural(class_basename($this->model))) . '.' . $postfix,
-            $objectId ? [Str::snake(class_basename($this->model)) => $objectId] : []
-        );
-    }
+        try {
+            $this->request->validateResolved();
 
-    private function prepareData($method = 'makeObject')
-    {
-        if (method_exists($this, $method)) {
-            return $this->$method();
+            $this->assertFalse(true);
+        } catch (ValidationException $exception) {
+
+            $this->errors = $exception->errors();
+
+            $this->assertTrue(true);
         }
 
-        return [];
+        return $this;
     }
+
+    public function assertInvalidParameter($invalidParameters)
+    {
+        foreach (is_array($invalidParameters) ? $invalidParameters : [$invalidParameters] as $k => $rule) {
+
+            if (is_array($rule)) {
+                $rule = $k;
+            }
+
+            if (!isset($this->errors[$rule])) {
+                $this->assertTrue(false);
+            }
+        }
+
+        $this->assertTrue(true);
+
+
+        return $this;
+    }
+
+    public function assertValidParameter($invalidParameters)
+    {
+        foreach (is_array($invalidParameters) ? $invalidParameters : [$invalidParameters] as $k => $rule) {
+
+            if (is_array($rule)) {
+                $rule = $k;
+            }
+
+            if (isset($this->errors[$rule])) {
+                $this->assertTrue(false);
+            }
+        }
+
+        $this->assertTrue(true);
+
+
+        return $this;
+    }
+
+    public function prepareRequest($payload, $model = null)
+    {
+
+        $this->request = new $this->model([], [], [], [], [], ($model ? ['REQUEST_URI' => $this->getModelPath() . '/' . $model->id] : []));
+        $this->request->setContainer(app());
+        $this->request->setRedirector(app(\Illuminate\Routing\Redirector::class));
+
+        $this->request->merge($payload);
+
+        if ($model) {
+            $this->resolveRoute();
+        }
+
+        return $this;
+    }
+
+    private function getModelPath()
+    {
+        return Str::kebab(Str::plural($this->getModelClassName()));
+    }
+
+    private function getModelClassName()
+    {
+        $explodedName = explode('_', Str::snake(class_basename($this->model)));
+        unset($explodedName[0], $explodedName[count($explodedName)]);
+
+        return implode('_', $explodedName);
+    }
+
+    private function resolveRoute()
+    {
+        $this->request->setRouteResolver(function () {
+            return (new Route('PATCH', $this->getModelPath() . '/{' . $this->getModelClassName() . '}', []))->bind($this->request);
+        });
+    }
+
 
 }

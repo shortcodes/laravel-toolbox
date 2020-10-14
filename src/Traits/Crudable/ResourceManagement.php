@@ -27,6 +27,6 @@ trait ResourceManagement
             return JsonResource::collection($object);
         }
 
-        return $object;
+        return new JsonResource($object);
     }
 }

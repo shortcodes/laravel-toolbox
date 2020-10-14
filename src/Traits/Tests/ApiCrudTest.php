@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Blueprints;
+namespace Shortcodes\Toolbox\Traits\Tests;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -20,6 +20,8 @@ abstract class ApiCrudTest extends TestCase
 
     public function test_index_object()
     {
+        $this->checkTestToRun('index');
+
         $this->json('GET', $this->getRoute('index'),
             $this->prepareData('indexQueryParams')
         )->assertStatus(200);
@@ -27,6 +29,8 @@ abstract class ApiCrudTest extends TestCase
 
     public function test_show_object()
     {
+        $this->checkTestToRun('show');
+
         $object = $this->makeObject(true);
 
         $response = $this->json('GET', $this->getRoute('show', $object->id));
@@ -40,6 +44,8 @@ abstract class ApiCrudTest extends TestCase
 
     public function test_store_object()
     {
+        $this->checkTestToRun('store');
+
         $response = $this->json('POST', $this->getRoute('store'), $this->prepareData());
 
         $response->assertStatus(201);
@@ -48,6 +54,8 @@ abstract class ApiCrudTest extends TestCase
 
     public function test_update_object()
     {
+        $this->checkTestToRun('update');
+
         $object = $this->makeObject(true);
 
         $response = $this->json('PATCH', $this->getRoute('update', $object->id), $this->prepareData());
@@ -57,6 +65,8 @@ abstract class ApiCrudTest extends TestCase
 
     public function test_delete_object()
     {
+        $this->checkTestToRun('destroy');
+
         $object = $this->makeObject(true);
 
         $response = $this->json('DELETE', $this->getRoute('destroy', $object->id));
@@ -91,6 +101,17 @@ abstract class ApiCrudTest extends TestCase
         }
 
         return [];
+    }
+
+    private function checkTestToRun(string $keyword)
+    {
+        if (isset($this->testOnly) && !in_array($keyword, $this->testOnly)) {
+            $this->markTestSkipped();
+        }
+
+        if (isset($this->testExcept) && in_array($keyword, $this->testExcept)) {
+            $this->markTestSkipped();
+        }
     }
 
 }
