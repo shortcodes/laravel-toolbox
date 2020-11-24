@@ -3,19 +3,29 @@
 namespace Shortcodes\Toolbox\Traits\Tests;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 abstract class ApiCrudTest extends TestCase
 {
     use DatabaseTransactions;
 
+    protected $user = null;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->actingAs(User::factory()->make())->withHeaders(['X-App-Token' => env('AUTH_KEY')]);
+        $this->user = User::factory()->create();
+        Sanctum::actingAs($this->user);
+    }
+
+    public function userModifier(User $user, Model $model)
+    {
+        return $user;
     }
 
     public function test_index_object()
@@ -80,7 +90,11 @@ abstract class ApiCrudTest extends TestCase
         $factoryObject = $this->model::factory();
 
         if ($persist) {
-            return $factoryObject->create();
+            $object = $factoryObject->create();
+
+            $this->userModifier($this->user, $object);
+
+            return $object;
         }
 
         return array_merge($factoryObject->make()->toArray(), $this->customMutator());
@@ -88,7 +102,6 @@ abstract class ApiCrudTest extends TestCase
 
     private function getRoute($objectId = null)
     {
-
         return route(Str::kebab(Str::plural(class_basename($this->model))) . '.' . $this->getPrefix(),
             $objectId ? [Str::snake(class_basename($this->model)) => $objectId] : []
         );
@@ -96,8 +109,12 @@ abstract class ApiCrudTest extends TestCase
 
     private function prepareData($method = 'makeObject')
     {
-        if (method_exists($this, $method)) {
+        if ($method === 'makeObject') {
             return $this->$method();
+        }
+
+        if (method_exists($this, $method)) {
+            return $this->$method($this->user);
         }
 
         return [];
@@ -124,7 +141,7 @@ abstract class ApiCrudTest extends TestCase
         $mutatorMethodName = $this->getPrefix() . 'CustomMutator';
 
         if (in_array($this->getPrefix(), ['store', 'update']) && method_exists($this, $mutatorMethodName)) {
-            return $this->$mutatorMethodName();
+            return $this->$mutatorMethodName($this->user);
         }
 
         return [];

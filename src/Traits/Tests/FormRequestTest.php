@@ -2,8 +2,10 @@
 
 namespace Shortcodes\Toolbox\Traits\Tests;
 
+use App\Models\User;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Str;
+use Illuminate\Validation\UnauthorizedException;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
@@ -12,6 +14,27 @@ abstract class FormRequestTest extends TestCase
     protected $model;
     private $request;
     private $errors;
+    protected $asUser = null;
+
+    public function as(User $user)
+    {
+        $this->asUser = $user;
+
+        return $this;
+    }
+
+    public function getUser()
+    {
+        if ($this->asUser) {
+            return $this->asUser;
+        }
+
+        if (method_exists($this, 'asUser')) {
+            return $this->asUser();
+        }
+
+        return null;
+    }
 
     public function assertValidRequest()
     {
@@ -36,6 +59,32 @@ abstract class FormRequestTest extends TestCase
 
             $this->errors = $exception->errors();
 
+            $this->assertTrue(true);
+        }
+
+        return $this;
+    }
+
+    public function assertAutorizedRequest()
+    {
+        try {
+            $this->request->validateResolved();
+
+            $this->assertTrue(true);
+        } catch (UnauthorizedException $exception) {
+            $this->assertTrue(false);
+        }
+
+        return $this;
+    }
+
+    public function assertUnautorizedRequest()
+    {
+        try {
+            $this->request->validateResolved();
+
+            $this->assertTrue(false);
+        } catch (UnauthorizedException $exception) {
             $this->assertTrue(true);
         }
 
@@ -82,10 +131,12 @@ abstract class FormRequestTest extends TestCase
 
     public function prepareRequest($payload, $model = null)
     {
-
         $this->request = new $this->model([], [], [], [], [], ($model ? ['REQUEST_URI' => $this->getModelPath() . '/' . $model->id] : []));
         $this->request->setContainer(app());
         $this->request->setRedirector(app(\Illuminate\Routing\Redirector::class));
+        $this->request->setUserResolver(function () {
+            return $this->getUser();
+        });
 
         $this->request->merge($payload);
 
