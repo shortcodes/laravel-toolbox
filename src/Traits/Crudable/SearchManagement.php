@@ -6,6 +6,8 @@ use Illuminate\Support\Collection;
 
 trait SearchManagement
 {
+    protected $disableAutoSortResolving = false;
+
     public function search()
     {
         $object = new $this->model;
@@ -35,7 +37,7 @@ trait SearchManagement
             return $query;
         }
 
-        if ((isset($this->pagination) && !$this->pagination ) || request()->get('pagination') === 'false') {
+        if ((isset($this->pagination) && !$this->pagination) || request()->get('pagination') === 'false') {
             return $query->get();
         }
 
