@@ -16,7 +16,7 @@ trait Crudable
             $this->search()
         );
 
-        if (method_exists($this, 'prepareMeta')) {
+        if (method_exists($this, 'addMeta')) {
             $resource->additional(['meta' => $this->addMeta()]);
         }
 
