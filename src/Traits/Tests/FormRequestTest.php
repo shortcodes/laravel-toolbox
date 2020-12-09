@@ -86,6 +86,8 @@ abstract class FormRequestTest extends TestCase
             $this->assertTrue(false);
         } catch (UnauthorizedException $exception) {
             $this->assertTrue(true);
+        } catch (AuthorizationException $exception) {
+            $this->assertTrue(true);
         }
 
         return $this;
