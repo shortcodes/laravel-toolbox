@@ -3,6 +3,7 @@
 namespace Shortcodes\Toolbox\Traits\Tests;
 
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Str;
 use Illuminate\Validation\UnauthorizedException;
@@ -72,6 +73,8 @@ abstract class FormRequestTest extends TestCase
 
             $this->assertTrue(true);
         } catch (UnauthorizedException $exception) {
+            $this->assertTrue(false);
+        } catch (AuthorizationException $exception) {
             $this->assertTrue(false);
         }
 
