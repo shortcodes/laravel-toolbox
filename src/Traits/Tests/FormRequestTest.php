@@ -157,7 +157,7 @@ abstract class FormRequestTest extends TestCase
         return Str::kebab(Str::plural($this->getModelClassName()));
     }
 
-    private function getModelClassName()
+    protected function getModelClassName()
     {
         $explodedName = explode('_', Str::snake(class_basename($this->model)));
         unset($explodedName[0], $explodedName[count($explodedName)]);
