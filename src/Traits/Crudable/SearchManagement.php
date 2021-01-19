@@ -6,8 +6,6 @@ use Illuminate\Support\Collection;
 
 trait SearchManagement
 {
-    protected $disableAutoSortResolving = false;
-
     public function search()
     {
         $object = new $this->model;
@@ -29,7 +27,7 @@ trait SearchManagement
             $query->search();
         }
 
-        if (!$this->disableAutoSortResolving && request()->get('sort_by') && request()->get('sort_direction')) {
+        if (!($this->disableAutoSortResolving ?? false) && request()->get('sort_by') && request()->get('sort_direction')) {
             $query->orderBy(request()->get('sort_by', 'id'), request()->get('sort_direction', 'desc'));
         }
 
